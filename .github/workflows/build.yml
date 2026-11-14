@@ -1,0 +1,46 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'threads2video.zip'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Giải nén project
+        run: unzip -q threads2video.zip -d proj
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build APK
+        run: gradle -p proj assembleDebug --no-daemon --stacktrace
+
+      - name: Đổi tên APK
+        run: cp proj/app/build/outputs/apk/debug/app-debug.apk Threads2Video.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Threads2Video-APK
+          path: Threads2Video.apk
+
+      - name: Tạo bản phát hành để tải APK trực tiếp
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Threads2Video v${{ github.run_number }}
+          files: Threads2Video.apk
